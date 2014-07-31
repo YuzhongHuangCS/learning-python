@@ -14,14 +14,14 @@ numerator = 1.0
 exponent = int(input('Please enter the exponent of the cycles (10^x) : '))
 cycles = 10**exponent
 #calc the print point
-points = list(map(lambda i: 10**i, range(exponent)))
+points = list(map(lambda i: 10**i, range(exponent+1)))
 
 startTimeStamp = time.time()
 
 #since python3, range behave like xrange in python2
-for i in range(cycles) :
+for i in range(cycles+1) :
 	sum += numerator / denominator
 	numerator = -numerator
 	denominator += 2
 	if(i in points) :
-		print("Calc 10^" + str(points.index(i)) + " times, Pi = " + str(sum*4) + ", Elapsed: " + str(time.time() - startTimeStamp) + "s")
+		print("Calc 10^" + str(points.index(i)) + " times, Pi = " + str(sum*4) + ", Elapsed: " + str(time.time() - startTimeStamp))
