@@ -10,8 +10,7 @@
 
 from Spider import Spider
 
-spider = Spider();
+spider = Spider()
 
-#print(spider.getVoluemPathList())
-for i in range(1002, 1003):
-	print(spider.getProblemContent(i))
+#spider.fetchAllProblems()
+print(spider.queryMatrixProblems())
