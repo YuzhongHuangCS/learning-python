@@ -74,7 +74,8 @@ class Spider(object):
 		return(self.query.fetchall())
 
 	def queryMatrixProblems(self):
-		# use "simple" tokenizer by default in sqlite's FTS engine to lowercase the query string, so matrix and Matrix will get the same result 
+		# use "simple" tokenizer by default in sqlite's FTS engine to lowercase the query string, so matrix and Matrix will get the same result
+		# and use UNION in SQL to merge matrix and matrices's result
 		self.query.execute('SELECT id, title FROM problems WHERE body MATCH "%s" UNION SELECT id, title FROM problems WHERE body MATCH "%s"' % ("matrix", "matrices"))
 		return(self.query.fetchall())
 
@@ -84,3 +85,4 @@ class Spider(object):
 
 	def printProblems(self, problems):
 		list(map(lambda i: print("ProblemID: %s, Title: %s, Link: %s%s%s" % (i[0], i[1], self.baseUrl, self.problemPath, i[0])), problems))
+		print("%s problems match your keyword" % len(problems))
