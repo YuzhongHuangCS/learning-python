@@ -57,7 +57,10 @@ class Spider(object):
 			"title": d('#content_body > center:nth-child(1) > span').text(),
 			"body": d('#content_body').text()
 		}
-		self.query.execute('INSERT INTO problems (id, title, body) VALUES (?, ?, ?)', (id, content['title'], content['body']))
+		print("Now fetching ProblemID: %s, Title: %s" % (id, content['title']))
+		# UPSERT in sqlite is INSERT OR REPLACE
+		# rowid is a internal column in sqlite
+		self.query.execute('INSERT OR REPLACE INTO problems (rowid, id, title, body) VALUES (?, ?, ?, ?)', (id-1000, id, content['title'], content['body']))
 
 	def fetchAllProblems(self):
 		list(map(lambda i: self.storeProblemContent(i), range(1001, self.getProblemCount()+1)))
@@ -74,3 +77,10 @@ class Spider(object):
 		# use "simple" tokenizer by default in sqlite's FTS engine to lowercase the query string, so matrix and Matrix will get the same result 
 		self.query.execute('SELECT id, title FROM problems WHERE body MATCH "%s" UNION SELECT id, title FROM problems WHERE body MATCH "%s"' % ("matrix", "matrices"))
 		return(self.query.fetchall())
+
+	def getItemsCount(self):
+		self.query.execute('SELECT COUNT(*) FROM problems')
+		return(self.query.fetchone())
+
+	def printProblems(self, problems):
+		list(map(lambda i: print("ProblemID: %s, Title: %s, Link: %s%s%s" % (i[0], i[1], self.baseUrl, self.problemPath, i[0])), problems))
