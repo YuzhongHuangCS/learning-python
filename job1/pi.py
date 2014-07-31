@@ -24,4 +24,4 @@ for i in range(cycles+1) :
 	numerator = -numerator
 	denominator += 2
 	if(i in points) :
-		print("Calc 10^" + str(points.index(i)) + " times, Pi = " + str(sum*4) + ", Elapsed: " + str(time.time() - startTimeStamp) + "s")
+		print("Calc 10^%s times, Pi = %s, Elapsed: %ss" % (points.index(i), sum*4, time.time() - startTimeStamp))
