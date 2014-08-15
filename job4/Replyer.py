@@ -47,7 +47,8 @@ class Replyer(object):
 			postData[item] = d('[name="' + item +'"]').attr('value')
 
 		# fetch the reply floor using css selector
-		postData['Content'] = "%s %s" % (int(d('#topicPagesNavigation > b').text()) + 1, hashlib.sha1(id).hexdigest())
+		floor = int(d('#topicPagesNavigation > b').text()) + 1
+		postData['Content'] = "%s %s" % (floor, hashlib.sha1(id).hexdigest())
 		postData['signflag'] = 'yes'
 		postData['Expression'] = 'face7.gif'
 
@@ -64,4 +65,4 @@ class Replyer(object):
 
 		r = requests.post(self.replyUrl, params = params, headers=headers, cookies=self.cookieData, data=postData)
 		r.raise_for_status()
-		return r.content
+		return floor
