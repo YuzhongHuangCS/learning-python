@@ -1,9 +1,14 @@
 'use strict';
-var sys = require('sys');
 var http = require('http');
 var jsdom = require('jsdom');
 var sqlite3 = require('sqlite3');
 var child_process = require('child_process');
+
+process.on('uncaughtException', function(err) {
+    console.log(err, err.stack);
+});
+
+var numCPUs = require('os').cpus().length;
 
 function Spider() {
 	//give an alias to this, to fill the js hell
@@ -59,7 +64,7 @@ function Spider() {
 			}
 		})
 	}
-	this.storeProblemContent = function(id) {
+	this.fetchProblem = function(id) {
 		// this request may take long time, so I use native http.client to handle it
 		var url = parent.baseUrl + parent.problemPath + id;
 		var req = http.get(url, function(res){
@@ -69,14 +74,36 @@ function Spider() {
 			});
 			res.on('end', function(){
 				console.log('Fetched ProblemID: ' + id);
-				parent.child.send([id, body]);
+				parent.child[id % numCPUs].send([id, body]);
 			});
 		});
 		req.on('error', function(e) {
 			console.log('problem with request: ' + e.message);
 		});
 	};
+	this.storeProblem = function (id, title, body) {
+		parent.stmt.run(id - parent.problemMin, id, title, body);
+		parent.done++;
+		if (parent.done == parent.problemCount) {
+			parent.tpend = Date.now();
+			//disconnect the child
+			parent.child.forEach(function(value){
+				value.disconnect();
+			})
+			console.log('Fetch data used ' + (parent.tpend - parent.tpstart) / 1000 + ' s');
 
+			console.log('Fetch data end, writing to database');
+			parent.tpstart = Date.now();
+			parent.db.serialize(function() {
+				parent.db.run('COMMIT');
+				parent.stmt.finalize();
+			});
+			parent.db.close(function() {
+				parent.tpend = Date.now();
+				console.log('Wirte to database used ' + (parent.tpend - parent.tpstart) / 1000 + ' s');
+			});
+		}
+	}
 	this.fetchAllProblems = function() {
 		parent.db.serialize(function() {
 			parent.stmt = parent.db.prepare('INSERT OR REPLACE INTO problems (rowid, id, title, body) VALUES (?, ?, ?, ?)');
@@ -84,35 +111,18 @@ function Spider() {
 		});
 		parent.tpstart = Date.now();
 		parent.done = 0;
-
-		// fork a separate process to parse the html
-		parent.child = child_process.fork('./child.js');
-		parent.child.on('message', function(m) {
-			var id = m[0]
-			var title = m[1];
-			var body = m[2];
-			parent.stmt.run(id - parent.problemMin, id, title, body);
-			parent.done++;
-			if (parent.done == parent.problemCount) {
-				parent.tpend = Date.now();
-				parent.child.disconnect();
-				console.log('Fetch data used ' + (parent.tpend - parent.tpstart) / 1000 + ' s');
-
-				console.log('Fetch data end, writing to database');
-				parent.tpstart = Date.now();
-				parent.db.serialize(function() {
-					parent.db.run('COMMIT');
-					parent.stmt.finalize();
-				});
-				parent.db.close(function() {
-					parent.tpend = Date.now();
-					console.log('Wirte to database used ' + (parent.tpend - parent.tpstart) / 1000 + ' s');
-				});
-			}
-		});
+		// fork child process to parse the html
+		parent.child = [];
+		for (var i = 0; i < numCPUs; i++) {
+			parent.child[i] = child_process.fork('./child.js');
+			parent.child[i].on('message', function(m) {
+				//id, title, body = m[0], m[1], m[2]
+				parent.storeProblem(m[0], m[1], m[2]);
+			});
+		};
 		// map the burden
 		for (var i = parent.problemMin; i <= parent.problemMax; i++) {
-			parent.storeProblemContent(i);
+			parent.fetchProblem(i);
 		}
 	}
 }

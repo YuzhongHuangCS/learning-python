@@ -1,5 +1,9 @@
 var jsdom = require('jsdom');
 
+process.on('uncaughtException', function(err) {
+    console.log(err, err.stack);
+});
+
 process.on('message', function(m) {
 	var id = m[0]
 	var body = m[1]
