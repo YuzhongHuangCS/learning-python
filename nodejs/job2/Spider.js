@@ -109,6 +109,7 @@ function Spider(){
 		parent.db.close(function(){
 			parent.tpend = Date.now();
 			console.log('Wirte to database used ' + (parent.tpend - parent.tpstart)/1000 + ' s');
+			parent.exit();
 		});
 	}
 	this.serializeFetchAllProblems = function(){
@@ -167,12 +168,16 @@ function Spider(){
 			console.log('ProblemID: ' + row.id + ', Title: ' + row.title + ', Link: ' + parent.baseUrl + parent.problemPath + row.id);
 		}, function(err, count){
 			console.log(count + ' problems match your keyword');
+			parent.exit();
 		})
 	}
 	this.getItemCount = function(){
 		parent.db.get('SELECT COUNT(*) AS count FROM problems', function(error, row){
 			console.log('Database have ' + row.count + ' problems stored now');
 		})
+	};
+	this.exit = function(){
+		process.exit(0);
 	}
 }
 

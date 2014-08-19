@@ -8,15 +8,15 @@ process.on('uncaughtException', function(err) {
 
 console.log("==Welcome to search engine for ZOJ==");
 
-if(!fs.existsSync('data.db')){
-	console.log("Local database hasn't build")
-}
-
-var Spider = new engine.Spider();
+var Spider;
 
 if(fs.existsSync('data.db')){
 	console.log('Local database is update on ' + fs.statSync('data.db').mtime);
+	Spider = new engine.Spider();
 	Spider.getItemCount();
+} else{
+	console.log("Local database hasn't build")
+	Spider = new engine.Spider();
 }
 
 console.log('Usage:');
@@ -28,6 +28,7 @@ console.log('[3] search problems');
 //process.stdin.resume();
 var running = false;
 var search = false;
+
 
 process.stdin.setEncoding('utf8');
 process.stdin.on('data', function (chunk) {
