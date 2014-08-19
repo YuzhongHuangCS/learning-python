@@ -66,7 +66,7 @@ class Spider(object):
 		list(map(lambda i: self.storeProblemContent(i), range(1001, self.getProblemCount()+1)))
 
 	def selectAllProblems(self):
-		self.query.execute('SELECT COUNT(*) FROM problems')
+		self.query.execute('SELECT * FROM problems')
 		return(self.query.fetchall())
 
 	def queryProblems(self, keyword):

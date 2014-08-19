@@ -1,135 +1,60 @@
 'use strict';
-var http = require('http');
-var jsdom = require('jsdom');
-var sqlite3 = require('sqlite3');
-var child_process = require('child_process');
+var fs = require("fs");
+var engine = require("./Spider");
 
 process.on('uncaughtException', function(err) {
-    console.log(err, err.stack);
+    console.log(err);
 });
 
-var numCPUs = require('os').cpus().length;
+console.log("==Welcome to search engine for ZOJ==");
 
-function Spider() {
-	//give an alias to this, to fill the js hell
-	var parent = this;
-	//prepare database
-	//use sqlite's FTS(Full Text Search) table to store the data and perform quick search
-	this.db = new sqlite3.Database('data.db');
-	this.db.run('CREATE VIRTUAL TABLE IF NOT EXISTS problems USING fts4(id, title, body)');
-	//define config
-	this.baseUrl = 'http://acm.zju.edu.cn';
-	this.indexPath = '/onlinejudge/showProblemsets.do';
-	this.voluemPath = '/onlinejudge/showProblems.do?contestId=1&pageNumber=';
-	this.problemPath = '/onlinejudge/showProblem.do?problemCode=';
-	this.problemMin = 1001;
-
-	//function define in prototype
-	this.getVolumeCount = function() {
-		jsdom.env({
-			url: parent.baseUrl + parent.indexPath,
-			done: function(errors, window) {
-				parent.voluemCount = window.document.querySelectorAll('#content_body > form:nth-child(1) > a').length;
-				//console.log(parent.voluemCount);
-				parent.getProblemMax();
-			}
-		})
-	}
-	/* this function is deprecated
-	 * because the problemID is continuous 
-	 * and we don't have to access the problem from the voluem page
-	 * just use problemPath and problemCode to access the problem
-	 */
-	this.getVoluemPathList = function() {
-		jsdom.env({
-			url: parent.baseUrl + parent.indexPath,
-			done: function(errors, window) {
-				parent.voluemPathList = window.document.querySelectorAll('#content_body > form:nth-child(1) > a')._toArray().map(function(item) {
-					return item.getAttribute('href');
-				})
-				//console.log(parent.voluemPathList)
-			}
-		})
-	}
-	this.getProblemMax = function() {
-		jsdom.env({
-			url: parent.baseUrl + parent.voluemPath + parent.voluemCount,
-			done: function(errors, window) {
-				var $ = require('jquery')(window);
-				parent.problemMax = $('#content_body > form:nth-child(1) > table > tr:last-child > td.problemId > a > font').text();
-				parent.problemCount = parent.problemMax - parent.problemMin + 1;
-				console.log(parent.problemMax + ' Problems in total');
-				//start map
-				parent.fetchAllProblems();
-			}
-		})
-	}
-	this.fetchProblem = function(id) {
-		// this request may take long time, so I use native http.client to handle it
-		var url = parent.baseUrl + parent.problemPath + id;
-		var req = http.get(url, function(res){
-			var body = '';
-			res.on('data', function(chunk){
-				body += chunk;
-			});
-			res.on('end', function(){
-				console.log('Fetched ProblemID: ' + id);
-				parent.child[id % numCPUs].send([id, body]);
-			});
-		});
-		req.on('error', function(e) {
-			console.log('problem with request: ' + e.message);
-		});
-	};
-	this.storeProblem = function (id, title, body) {
-		parent.stmt.run(id - parent.problemMin, id, title, body);
-		parent.done++;
-		if (parent.done == parent.problemCount) {
-			parent.tpend = Date.now();
-			//disconnect the child
-			parent.child.forEach(function(value){
-				value.disconnect();
-			})
-			console.log('Fetch data used ' + (parent.tpend - parent.tpstart) / 1000 + ' s');
-
-			console.log('Fetch data end, writing to database');
-			parent.tpstart = Date.now();
-			parent.db.serialize(function() {
-				parent.db.run('COMMIT');
-				parent.stmt.finalize();
-			});
-			parent.db.close(function() {
-				parent.tpend = Date.now();
-				console.log('Wirte to database used ' + (parent.tpend - parent.tpstart) / 1000 + ' s');
-			});
-		}
-	}
-	this.fetchAllProblems = function() {
-		parent.db.serialize(function() {
-			parent.stmt = parent.db.prepare('INSERT OR REPLACE INTO problems (rowid, id, title, body) VALUES (?, ?, ?, ?)');
-			parent.db.run('BEGIN');
-		});
-		parent.tpstart = Date.now();
-		parent.done = 0;
-		// fork child process to parse the html
-		parent.child = [];
-		for (var i = 0; i < numCPUs; i++) {
-			parent.child[i] = child_process.fork('./child.js');
-			parent.child[i].on('message', function(m) {
-				//id, title, body = m[0], m[1], m[2]
-				parent.storeProblem(m[0], m[1], m[2]);
-			});
-		};
-		// map the burden
-		for (var i = parent.problemMin; i <= parent.problemMax; i++) {
-			parent.fetchProblem(i);
-		}
-	}
+if(!fs.existsSync('data.db')){
+	console.log("Local database hasn't build")
 }
 
-try {
-	var spider = new Spider();
-	spider.getVolumeCount();
-} catch(e) {
-	console.log(e);
+var Spider = new engine.Spider();
+
+if(fs.existsSync('data.db')){
+	console.log('Local database is update on ' + fs.statSync('data.db').mtime);
+	Spider.getItemCount();
 }
+
+console.log('Usage:');
+console.log('[1] update the local database in single process');
+console.log('[2] update the local database in multi process');
+console.log('[3] search problems');
+
+
+//process.stdin.resume();
+var running = false;
+var search = false;
+
+process.stdin.setEncoding('utf8');
+process.stdin.on('data', function (chunk) {
+	if(!running){
+		//remove the \n manually
+		chunk = chunk.replace('\n', '');
+		switch(chunk){
+			case '1': 
+				Spider.run();
+				running = true;
+				break;
+			case '2': 
+				Spider.run('parallel');
+				running = true;
+				break;
+			case '3':
+				console.log('Please enter the keyword: ');
+				search = true;
+				break;
+			default:
+				if(search){
+					Spider.queryProblems(chunk);
+					running = true;
+				} else{
+					console.log('>_< You typed something silly, byebye');
+					process.exit(0);
+				}
+		}
+	}
+});
