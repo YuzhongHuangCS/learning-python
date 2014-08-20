@@ -26,7 +26,8 @@ prev = {
 }
 next = [start]
 while next:
-	source = next.pop()
+	# from stack to quene
+	source = next.pop(0)
 	if(forbidden(source)):
 		continue
 	if(source == end):
