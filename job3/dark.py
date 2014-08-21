@@ -48,6 +48,7 @@ prev = {start: None}
 next = []
 heapq.heappush(next, (0, start))
 # closed means visited
+# note that dict in python is implemented with hashmap, so use a dict rather than list
 closed = {}
 d = {start: 0}
 while next:
@@ -60,6 +61,7 @@ while next:
     if source in closed:
         continue
     closed[source] = 1
+    print(len(closed))
     for ox, oy in ((0, 1), (1, 0), (0, -1), (-1, 0)):
         x, y = source
         target = (x + ox, y + oy)
