@@ -30,7 +30,7 @@ def cbRequest(response):
 def stop(ignored):
     reactor.stop()
 
-pool = HTTPConnectionPool(reactor, persistent=True)
+pool = HTTPConnectionPool(reactor)
 pool.maxPersistentPerHost = 10
 agent = Agent(reactor, pool=pool)
 
