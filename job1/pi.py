@@ -5,7 +5,7 @@
 # pi.py
 # Copyleft 2014 Yuzo(PillowSky) <Yuzo@pillowsky.org>
 # Compatible with python3 and pypy
-import time; 
+import time
 
 sum = 0.0
 denominator = 1.0
