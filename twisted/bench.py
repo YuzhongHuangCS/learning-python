@@ -27,13 +27,13 @@ def counter():
     req_generated = req_made = req_done = 0
     reactor.callLater(1, counter)
 
-def body_received(body):  
+def body_received(body):
     global req_done
     req_done += 1
 
 def request_done(response):  
     global req_made
-    deferred = treq.json_content(response)
+    deferred = treq.text_content(response)
     req_made += 1
     deferred.addCallback(body_received)
     deferred.addErrback(lambda x: None)  # ignore errors

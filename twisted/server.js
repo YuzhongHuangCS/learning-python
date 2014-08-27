@@ -8,8 +8,8 @@
     res.writeHeader(200, {
       "Content-Type": "text/plain"
     });
-    res.write('From nodejs');
-    return res.end;
+    res.write('From Nodejs');
+    return res.end();
   });
 
   server.listen(8080);
