@@ -11,8 +11,7 @@
 
   process.on('message', function(m) {
     var html, id;
-    id = m[0];
-    html = m[1];
+    id = m[0], html = m[1];
     return jsdom.env(html, function(errors, window) {
       var $, body, title;
       $ = require('jquery')(window);

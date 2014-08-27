@@ -5,8 +5,7 @@ process.on 'uncaughtException', (err) ->
 	console.log err
 
 process.on 'message', (m) ->
-	id = m[0]
-	html = m[1]
+	[id, html] = m
 	jsdom.env html, (errors, window) ->
 		$ = require('jquery')(window)
 		title = $('#content_body > center:nth-child(1) > span').text()
