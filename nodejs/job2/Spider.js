@@ -156,7 +156,7 @@
       var i, _i, _ref, _ref1, _results;
       this.prepareFetch();
       _results = [];
-      for (i = _i = _ref = this.problemMin, _ref1 = this.problemMax; _ref <= _ref1 ? _i < _ref1 : _i > _ref1; i = _ref <= _ref1 ? ++_i : --_i) {
+      for (i = _i = _ref = this.problemMin, _ref1 = this.problemMax; _ref <= _ref1 ? _i <= _ref1 : _i >= _ref1; i = _ref <= _ref1 ? ++_i : --_i) {
         _results.push(this.fetchStoreProblem(i));
       }
       return _results;
@@ -204,7 +204,7 @@
         })(this));
       }
       _results = [];
-      for (i = _j = _ref = this.problemMin, _ref1 = this.problemMax; _ref <= _ref1 ? _j < _ref1 : _j > _ref1; i = _ref <= _ref1 ? ++_j : --_j) {
+      for (i = _j = _ref = this.problemMin, _ref1 = this.problemMax; _ref <= _ref1 ? _j <= _ref1 : _j >= _ref1; i = _ref <= _ref1 ? ++_j : --_j) {
         _results.push(this.fetchProblem(i));
       }
       return _results;

@@ -100,7 +100,7 @@ class Spider
 
 	serializeFetchAllProblems: =>
 		@prepareFetch()
-		for i in [@problemMin...@problemMax]
+		for i in [@problemMin..@problemMax]
 			@fetchStoreProblem(i)
 
 	fetchProblem: (id) =>
@@ -134,7 +134,7 @@ class Spider
 				@storeProblem(m[0], m[1], m[2])
 
 		# map the burden
-		for i in [@problemMin...@problemMax]
+		for i in [@problemMin..@problemMax]
 			@fetchProblem(i)
 
 	selectAllProblems: =>
