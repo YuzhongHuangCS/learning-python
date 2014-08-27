@@ -21,19 +21,22 @@ else:
 	print("Local database hasn't build")
 	spider = Spider()
 
-print("Usage:")
-print("[1] update the local database(need a long time)")
-print("[2] search problems about Matrix")
-print("[3] search generic problems")
-choice = input()
-if(choice == str(1)) :
-	spider.fetchAllProblems()
-else:
-	if(choice == str(2)):
-		spider.printProblems(spider.queryMatrixProblems())
+while True:
+	print("\nUsage:")
+	print("[1] update the local database(need a long time)")
+	print("[2] search problems about Matrix")
+	print("[3] search generic problems")
+	
+	choice = input()
+	if(choice == str(1)) :
+		spider.fetchAllProblems()
 	else:
-		if(choice == str(3)):
-			keyword = input('Please enter the keyword: ')
-			spider.printProblems(spider.queryProblems(keyword))
+		if(choice == str(2)):
+			spider.printProblems(spider.queryMatrixProblems())
 		else:
-			print(">_< You typed something silly, byebye")
+			if(choice == str(3)):
+				keyword = input('Please enter the keyword: ')
+				spider.printProblems(spider.queryProblems(keyword))
+			else:
+				print(">_< You typed something silly, byebye")
+				exit()

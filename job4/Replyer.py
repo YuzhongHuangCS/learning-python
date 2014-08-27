@@ -65,4 +65,4 @@ class Replyer(object):
 
 		r = requests.post(self.replyUrl, params = params, headers=headers, cookies=self.cookieData, data=postData)
 		r.raise_for_status()
-		return floor
+		return (floor, postData['Content'])

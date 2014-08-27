@@ -14,7 +14,7 @@ numerator = 1.0
 exponent = int(input('Please enter the exponent of the cycles (10^x) : '))
 cycles = 10**exponent
 #calc the print point
-points = list(map(lambda i: 10**i, range(exponent+1)))
+points = [10**i for i in range(exponent+1)]
 
 startTimeStamp = time.time()
 
