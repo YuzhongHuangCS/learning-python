@@ -1,30 +1,45 @@
+#!/usr/bin/env python
 from twisted.internet import epollreactor
 epollreactor.install()
-from twisted.internet import reactor
+from twisted.internet import reactor, task
 import treq
+
+cooperator = task.Cooperator()
+done = 0
 
 baseUrl = 'http://acm.zju.edu.cn/onlinejudge/showProblem.do?problemCode='
 
-start = 1001
-upLimit = 2000
-current = 1001
+def onHeader(response, i):  
+    deferred = treq.text_content(response)
+    deferred.addCallback(onBody, i)
+    deferred.addErrback(errorHandler)
+    return deferred
 
-def receive(response, id):
-	return treq.text_content(response).addCallback(content, id)
+def onBody(body, i):
+    global done
+    done += 1
+    print('Received %s, Length %s, done %s' % (i, len(body), done))
 
-def content(html, id):
-	print('No. %s, HTML length %s' %(id, len(html)))
-	global current
-	current += 1
-	print('Current:' + str(current))
-	if(current == upLimit):
-		reactor.stop()
+def errorHandler(err):
+    global reactor
+    print(err)
+    reactor.stop()
+    exit()
 
-def initTasks():
-	for i in range(start, upLimit):
-		print('Spawn' + str(i))
-		treq.get(baseUrl + str(i), timeout=300).addCallback(receive, i)
-		reactor.iterate(10)
+def requestFactory():  
+    global baseUrl, reactor
+    for i in range (1001, 3500):
+        print('Generator %s' % i)
+        deferred = treq.get(baseUrl + str(i))
+        deferred.addCallback(onHeader, i)
+        deferred.addErrback(errorHandler)
+        reactor.iterate()
+        #reactor.callLater(2,printTime)
+        yield None
 
-reactor.callWhenRunning(initTasks)
-reactor.run()
+if __name__ == '__main__':  
+    # make cooperator work on spawning requests
+    cooperator.cooperate(requestFactory())
+    
+    #reactor.callWhenRunning(requestFactory)
+    reactor.run()

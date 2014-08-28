@@ -4,9 +4,7 @@ epollreactor.install()
 
 from twisted.internet import reactor, task  
 from twisted.web.client import HTTPConnectionPool  
-import treq  
-import random  
-from datetime import datetime
+import treq
 
 req_generated = 0  
 req_made = 0  

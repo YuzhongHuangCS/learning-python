@@ -6,10 +6,10 @@ from twisted.web.client import Agent, HTTPConnectionPool
 baseUrl = 'http://acm.zju.edu.cn/onlinejudge/showProblem.do?problemCode='
 
 start = 1001
-upLimit = 3500
+upLimit = 3000
 current = start
 
-class storeBody(Protocol):
+class onBody(Protocol):
     def __init__(self, deferred):
         self.deferred = deferred
         self.body = ''
@@ -18,24 +18,29 @@ class storeBody(Protocol):
         self.body += bytes
 
     def connectionLost(self, reason):
+        self._factory.pool.release(None)
         #print(reason)
         global current
         print('No. %s, HTML length: %s ' % (current, len(self.body)))
         current += 1
-
-def cbRequest(response):
-    response.deliverBody(storeBody(response))
+        
+def onHeader(response):
+    response.deliverBody(onBody(response))
     return response
 
-def stop(ignored):
-    reactor.stop()
+def errorHandler(err):
+    print(err)
+
+def requestFactory():
+    for i in range(start, upLimit):
+        deferred = agent.request('GET', baseUrl + str(i))
+        deferred.addCallback(onHeader)
+        deferred.addErrback(errorHandler)
+        reactor.iterate(1)
 
 pool = HTTPConnectionPool(reactor)
-pool.maxPersistentPerHost = 10
+#pool.maxPersistentPerHost = 5
 agent = Agent(reactor, pool=pool)
 
-for i in range(start, upLimit):
-    d = agent.request('GET', baseUrl + str(i))
-    d.addCallback(cbRequest)
-
+reactor.callWhenRunning(requestFactory)
 reactor.run()
