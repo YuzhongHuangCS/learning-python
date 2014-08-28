@@ -8,9 +8,8 @@
     res.writeHeader(200, {
       "Content-Type": "text/html"
     });
-    res.write('<p>Headers:</p>');
+    res.write("</p>HttpVersion: " + req.httpVersion + " </p>");
     res.write(JSON.stringify(req.headers));
-    res.write('<hr/><p><i>Powered by nodejs</i></p>');
     return res.end();
   });
 
