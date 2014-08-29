@@ -26,13 +26,13 @@ def onHeader(response, i):
 def onBody(body, i):
 	global done
 	done += 1
-	print(len(pool._connections[('http', 'acm.zju.edu.cn', 80)]))
+	sem.release()
 	print('Received %s, Length %s, done %s' % (i, len(body), done))
 
 def errorHandler(err, i):
 	print('[%s] id %s: %s' % (reactor.seconds() - startTimeStamp, i, err))
 
-def requestFactory(i):
+def requestFactory(token, i):
 	deferred = agent.request('GET', baseUrl + str(i))
 	deferred.addCallback(onHeader, i)
 	deferred.addErrback(errorHandler, i)
@@ -40,11 +40,11 @@ def requestFactory(i):
 	reactor.iterate(1)
 	return deferred
 
-sem = DeferredSemaphore(100)
+sem = DeferredSemaphore(10)
 
 def main():
 	for i in range (start, end):
-		sem.run(requestFactory, i)
+		sem.acquire().addCallback(requestFactory, i)
 
 startTimeStamp = reactor.seconds()
 reactor.callWhenRunning(main)

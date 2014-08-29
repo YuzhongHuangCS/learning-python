@@ -8,6 +8,11 @@
 #
 # require PyQuery which depend on cssselect, so I pack it in the project to ensure running normally on other computers
 
+from twisted.internet import epollreactor
+epollreactor.install()
+from twisted.internet import reactor
+from twisted.web.client import Agent, HTTPConnectionPool, readBody
+from twisted.internet.defer import DeferredSemaphore, gatherResults
 from pyquery import PyQuery as pyq
 import sqlite3
 
@@ -44,26 +49,76 @@ class Spider(object):
 		d = pyq(url = self.baseUrl + self.indexPath)
 		return list(map(lambda i: d('#content_body > form:nth-child(1) > a:nth-child(%d)' % i).attr("href"), range(1, self.voluemCount+1)))
 
-	def getProblemCount(self):
+	def getProblemMax(self):
 		self.getVolumeCount()
 		
 		d = pyq(url = self.baseUrl + self.voluemPath + str(self.voluemCount))
-		self.problemCount = int(d('#content_body > form:nth-child(1) > table > tr:last-child > td.problemId > a > font').text())
-		return self.problemCount
+		self.problemMax = int(d('#content_body > form:nth-child(1) > table > tr:last-child > td.problemId > a > font').text())
+		self.problemCount = self.problemMax - 1001 + 1
+		return self.problemMax
 
-	def storeProblemContent(self, id):
+	def fetchProblem(self, id):
 		d = pyq(url = self.baseUrl + self.problemPath + str(id))
-		content = {
-			"title": d('#content_body > center:nth-child(1) > span').text(),
-			"body": d('#content_body').text()
-		}
-		print("Now fetching ProblemID: %s, Title: %s" % (id, content['title']))
+		title = d('#content_body > center:nth-child(1) > span').text(),
+		body = d('#content_body').text()
+		print("Now fetching ProblemID: %s, Title: %s" % (id, title[0]))
+		self.storeProblem(id, title[0], body)
+
+	def storeProblem(self, id, title, body):
 		# UPSERT in sqlite is INSERT OR REPLACE
 		# rowid is a internal column in sqlite
-		self.query.execute('INSERT OR REPLACE INTO problems (rowid, id, title, body) VALUES (?, ?, ?, ?)', (id-1000, id, content['title'], content['body']))
+		self.query.execute('INSERT OR REPLACE INTO problems (rowid, id, title, body) VALUES (?, ?, ?, ?)', (id-1000, id, title, body))
 
-	def fetchAllProblems(self):
-		list(map(lambda i: self.storeProblemContent(i), range(1001, self.getProblemCount()+1)))
+	def serialFetchAllProblems(self):
+		self.query.execute('BEGIN')
+		list(map(lambda i: self.fetchProblem(i), range(1001, self.getProblemMax()+1)))
+		self.query.execute('COMMIT')
+
+	def parallelFetchAllProblems(self):
+			pool = HTTPConnectionPool(reactor)
+			pool.maxPersistentPerHost = 10
+			agent = Agent(reactor, pool=pool)
+			sem = DeferredSemaphore(10)
+			self.done = 0
+			def assign():
+				self.query.execute('BEGIN')
+				for id in range(1001, self.getProblemMax()+1):
+					sem.acquire().addCallback(requestFactory, id)
+			
+			def requestFactory(token, id):
+				deferred = agent.request('GET', self.baseUrl + self.problemPath + str(id))
+				deferred.addCallback(onHeader, id)
+				deferred.addErrback(errorHandler, id)
+				# sem lead to wait time in main loop, so needn't iterate manually
+				# reactor.iterate(1)
+				return deferred
+			
+			def onHeader(response, id):
+				deferred = readBody(response)
+				deferred.addCallback(onBody, id)
+				deferred.addErrback(errorHandler, id)
+				return deferred
+
+			def onBody(html, id):
+				sem.release()
+				d = pyq(html)
+				title = d('#content_body > center:nth-child(1) > span').text(),
+				body = d('#content_body').text()
+				print('Fetched ProblemID: %s, Title: %s, done: %s' % (id, title[0], self.done))
+				self.storeProblem(id, title[0], body)
+				self.done += 1
+				if(self.done == self.problemCount):
+					print('Fetch data used %s s' % (reactor.seconds() - startTimeStamp))
+					print('Fetch data end, writing to database')
+					self.query.execute('COMMIT')
+					reactor.stop()
+
+			def errorHandler(err, id):
+				print('[%s] id %s: %s' % (reactor.seconds() - startTimeStamp, id, err))
+
+			startTimeStamp = reactor.seconds()
+			reactor.callWhenRunning(assign)
+			reactor.run()
 
 	def selectAllProblems(self):
 		self.query.execute('SELECT * FROM problems')
@@ -84,5 +139,6 @@ class Spider(object):
 		return(self.query.fetchone())
 
 	def printProblems(self, problems):
-		list(map(lambda i: print("ProblemID: %s, Title: %s, Link: %s%s%s" % (i[0], i[1], self.baseUrl, self.problemPath, i[0])), problems))
+		for i in problems:
+			print("ProblemID: %s, Title: %s, Link: %s%s%s" % (i[0], i[1], self.baseUrl, self.problemPath, i[0]))
 		print("%s problems match your keyword" % len(problems))
