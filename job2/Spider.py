@@ -8,24 +8,24 @@
 #
 # require PyQuery which depend on cssselect, so I pack it in the project to ensure running normally on other computers
 
-from twisted.internet import epollreactor
+from twisted.internet import epollreactor  
 epollreactor.install()
 from twisted.internet import reactor
 from twisted.web.client import Agent, HTTPConnectionPool, readBody
-from twisted.internet.defer import DeferredSemaphore, gatherResults
+from twisted.internet.defer import DeferredSemaphore
 from pyquery import PyQuery as pyq
 import sqlite3
 
 class Spider(object):
 
-	def __init__(self, arg = ''):
+	def __init__(self):
 		super(Spider, self).__init__()
 		# data member initialize
-		self.arg = arg
 		self.baseUrl = 'http://acm.zju.edu.cn'
 		self.indexPath = '/onlinejudge/showProblemsets.do'
 		self.voluemPath = '/onlinejudge/showProblems.do?contestId=1&pageNumber='
 		self.problemPath = '/onlinejudge/showProblem.do?problemCode='
+		self.concurrency = 10
 
 		#connect to db and checks
 		self.db = sqlite3.connect("data.db", isolation_level = None)
@@ -76,10 +76,11 @@ class Spider(object):
 
 	def parallelFetchAllProblems(self):
 			pool = HTTPConnectionPool(reactor)
-			pool.maxPersistentPerHost = 10
+			pool.maxPersistentPerHost = self.concurrency
 			agent = Agent(reactor, pool=pool)
-			sem = DeferredSemaphore(10)
+			sem = DeferredSemaphore(self.concurrency)
 			self.done = 0
+
 			def assign():
 				self.query.execute('BEGIN')
 				for id in range(1001, self.getProblemMax()+1):
