@@ -54,7 +54,7 @@ class Spider
 			url: @baseUrl + @voluemPath + @voluemCount
 			done: (errors, window) =>
 				$ = require('jquery')(window)
-				@problemMax = $('#content_body > form:nth-child(1) > table > tr:last-child > td.problemId > a > font').text()
+				@problemMax = $('#content_body > form:nth-child(1) > table > tbody > tr:last-child > td.problemId > a > font').text()
 				@problemCount = @problemMax - @problemMin + 1
 				console.log "#{@problemCount} Problems in total"
 				window.close()

@@ -86,7 +86,7 @@
           return function(errors, window) {
             var $;
             $ = require('jquery')(window);
-            _this.problemMax = $('#content_body > form:nth-child(1) > table > tr:last-child > td.problemId > a > font').text();
+            _this.problemMax = $('#content_body > form:nth-child(1) > table > tbody > tr:last-child > td.problemId > a > font').text();
             _this.problemCount = _this.problemMax - _this.problemMin + 1;
             console.log("" + _this.problemCount + " Problems in total");
             window.close();
