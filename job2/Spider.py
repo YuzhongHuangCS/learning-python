@@ -90,8 +90,6 @@ class Spider(object):
 				deferred = agent.request('GET', self.baseUrl + self.problemPath + str(id))
 				deferred.addCallback(onHeader, id)
 				deferred.addErrback(errorHandler, id)
-				# sem lead to wait time in main loop, so needn't iterate manually
-				# reactor.iterate(1)
 				return deferred
 			
 			def onHeader(response, id):
