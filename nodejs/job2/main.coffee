@@ -16,9 +16,8 @@ else
 	Spider = new engine.Spider()
 
 console.log 'Usage:'
-console.log '[1] update the local database in single process'
-console.log '[2] update the local database in multi process'
-console.log '[3] search problems'
+console.log '[1] update the local database'
+console.log '[2] search problems'
 
 # process.stdin.resume()
 running = false;
@@ -34,9 +33,6 @@ process.stdin.on 'data', (chunk)->
 				Spider.run()
 				running = true
 			when '2'
-				Spider.run 'parallel'
-				running = true
-			when '3'
 				console.log 'Please enter the keyword: '
 				search = true
 			else
