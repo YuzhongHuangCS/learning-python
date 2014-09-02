@@ -1,6 +1,4 @@
 #!/usr/bin/env python
-from twisted.internet import epollreactor  
-epollreactor.install()
 from twisted.internet import reactor
 from twisted.web.client import Agent, HTTPConnectionPool, readBody
 from twisted.internet.defer import DeferredSemaphore

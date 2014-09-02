@@ -8,8 +8,6 @@
 #
 # require PyQuery which depend on cssselect, so I pack it in the project to ensure running normally on other computers
 
-from twisted.internet import epollreactor  
-epollreactor.install()
 from twisted.internet import reactor
 from twisted.web.client import Agent, HTTPConnectionPool, readBody
 from twisted.internet.defer import DeferredSemaphore
