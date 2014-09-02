@@ -24,11 +24,9 @@
 
   console.log('Usage:');
 
-  console.log('[1] update the local database in single process');
+  console.log('[1] update the local database');
 
-  console.log('[2] update the local database in multi process');
-
-  console.log('[3] search problems');
+  console.log('[2] search problems');
 
   running = false;
 
@@ -44,9 +42,6 @@
           Spider.run();
           return running = true;
         case '2':
-          Spider.run('parallel');
-          return running = true;
-        case '3':
           console.log('Please enter the keyword: ');
           return search = true;
         default:
