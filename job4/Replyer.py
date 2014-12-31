@@ -15,10 +15,13 @@ from urllib import parse
 from pyquery import PyQuery as pyq
 
 class Replyer(object):
+	loginUrl = 'http://www.cc98.org/login.asp'
+	replyUrl = 'http://www.cc98.org/SaveReAnnounce.asp'
+	postUrl = 'http://www.cc98.org/SaveAnnounce.asp'
+
 	def __init__(self, username, password):
 		super(Replyer, self).__init__()
-		self.loginUrl = 'http://www.cc98.org/login.asp'
-		self.replyUrl = 'http://www.cc98.org/SaveReAnnounce.asp'
+
 		postData ={
 			"username": username,
 			"password": password,
@@ -33,7 +36,7 @@ class Replyer(object):
 			raise Exception('Login Failed')
 
 		# extract and store cookies manually
-		self.cookieData = dict()
+		self.cookieData = {}
 		for item in r.cookies:
 			self.cookieData[item.name] = item.value
 
@@ -73,3 +76,37 @@ class Replyer(object):
 			raise Exception('Reply Failed')
 
 		return (floor, postData['Content'])
+
+	def post(self, boardID, subject, content):
+		token = {}
+
+		for item in self.cookieData['aspsky'].split('&'):
+			key, value = item.split('=')
+			token[key] = value
+
+		# add necessary referer header
+		headers = {
+			'Referer': 'http://www.cc98.org'
+		}
+		# parse and add query params
+		params = {
+			'boardID': boardID
+		}
+
+		postData = {
+			"upfilerename": "",
+			"username": token['username'],
+			"passwd": token['password'],
+			"subject": subject,
+			"Expression": "face7.gif",
+			"Content": content,
+			"signflag": "yes"
+		}
+
+		r = requests.post(self.postUrl, params = params, headers=headers, cookies=self.cookieData, data=postData)
+		r.raise_for_status()
+
+		if '发表帖子成功' not in r.text:
+			raise Exception('Post Failed')
+
+		return boardID

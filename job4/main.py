@@ -29,8 +29,12 @@ url = 'http://www.cc98.org/dispbbs.asp?BoardID=509&id=4223610'
 
 try:
 	robot = Replyer(username, password)
+
 	result = robot.reply(url, id)
 	print('Successfully leave a reply on floor %s, content %s' % (result[0], result[1]))
+
+	result = robot.post(509, "title", "body")
+	print('Successfully post a thread on board %s' % (result))
 
 except Exception as e:
 	print("Error occured! " + str(e))
