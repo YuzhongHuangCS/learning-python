@@ -11,7 +11,7 @@
 
 import hashlib
 import requests
-import urlparse
+from urllib import parse
 from pyquery import PyQuery as pyq
 
 class Replyer(object):
@@ -28,6 +28,9 @@ class Replyer(object):
 		# perform post action and raise exception if necessary
 		r = requests.post(self.loginUrl, data=postData)
 		r.raise_for_status()
+
+		if '登录成功' not in r.text:
+			raise Exception('Login Failed')
 
 		# extract and store cookies manually
 		self.cookieData = dict()
@@ -48,7 +51,7 @@ class Replyer(object):
 
 		# fetch the reply floor using css selector
 		floor = int(d('#topicPagesNavigation > b').text()) + 1
-		postData['Content'] = "%s %s" % (floor, hashlib.sha1(id).hexdigest())
+		postData['Content'] = '%s %s' % (floor, hashlib.sha1(id.encode()).hexdigest())
 		postData['signflag'] = 'yes'
 		postData['Expression'] = 'face7.gif'
 
@@ -60,9 +63,13 @@ class Replyer(object):
 		params = {
 			'method': 'fastreply'
 		}
-		queryStr=urlparse.parse_qs(urlparse.urlparse(url).query)
+		queryStr=parse.parse_qs(parse.urlparse(url).query)
 		params['BoardID'] = queryStr['BoardID'][0]
 
 		r = requests.post(self.replyUrl, params = params, headers=headers, cookies=self.cookieData, data=postData)
 		r.raise_for_status()
+
+		if '回复帖子成功' not in r.text:
+			raise Exception('Reply Failed')
+
 		return (floor, postData['Content'])

@@ -18,7 +18,6 @@ try:
 	f = open('passwd.txt')
 	username = f.readline().strip('\n')
 	password = f.readline().strip('\n')
-	f.close()
 
 except IOError as e:
 	print("A passwd.txt file is required to get the program work")
