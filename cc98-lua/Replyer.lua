@@ -28,7 +28,7 @@ end
 
 function Replyer:post(boardID, subject, content)
 	token = {}
-	for _, c in pairs(self.cookies) do
+	for _, c in ipairs(self.cookies) do
 		if c.key == 'aspsky' then
 			base = c.value
 			c.flags.path = '/'
@@ -65,6 +65,39 @@ function Replyer:post(boardID, subject, content)
 		return nil
 	else
 		return boardID
+	end
+end
+
+function Replyer:reply(boardID, rootID, content)
+	for _, c in ipairs(self.cookies) do
+		c.flags.path = '/'
+	end
+
+	options = {
+		cookies = self.cookies,
+		params = {
+			BoardID = boardID,
+			method = 'fastreply'
+		},
+		headers = {
+			Referer = 'http://www.cc98.org'
+		},
+		body = {
+			RootID = rootID,
+			followup = rootID,
+			star = 1,
+			Content = content,
+			signflag = 'yes',
+			Expression = 'face7.gif'
+		}
+	}
+
+	code, response, body = client.request_raw(self.replyUrl, options)
+
+	if not body:find('回复帖子成功') then
+		return nil
+	else
+		return boardID, rootID, content
 	end
 end
 
