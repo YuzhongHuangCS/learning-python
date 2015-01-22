@@ -6,15 +6,29 @@ if not fd then
 	print('Require zombie.json to run the program.')
 	return 1
 else
-	data = json.decode(fd:read())
+	data = json.decode(fd:read("*a"))
 end
 
-robot = Replyer:new('xuan', 'lovegcc')
+count = 0
+for k, v in pairs(data) do
+	count = count + 1
+end
+
+math.randomseed(os.time())
+want = math.random(1, count)
+
+k, v = nil, nil
+for i = 1, want do
+	k, v = next(data, k)
+end
+
+robot = Replyer:new(k, v)
 if not robot then
-	print('Login Failed')
+	print(string.format("Failed to login as %s:%s", k, v))
 	return -1
+else
+	print(string.format("Successfully login as %s", k))
 end
-
 
 result = robot:post(509, 'title', 'body')
 if not result then
@@ -24,7 +38,7 @@ else
 	print(string.format("Successfully post a thread on board %s", result))
 end
 
-boardID, rootID, content = robot:reply(501, 4223610, 'LuCI httpclient 0.1')
+boardID, rootID, content = robot:reply(509, 4223610, 'LuCI httpclient 0.1')
 if not boardID then
 	print('Reply Thread Failed')
 	return -1
