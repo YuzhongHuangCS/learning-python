@@ -16,7 +16,7 @@ if not robot then
 end
 
 result = robot:post(509, 'title', 'body')
-if not robot then
+if not result then
 	print('Post Thread Failed')
 	return -1
 else

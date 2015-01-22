@@ -1,3 +1,6 @@
+-- Note: This file require a patched version of "luci.httpclient"
+-- https://github.com/Preffer/luci
+
 http = require 'luci.http.protocol'
 client = require 'luci.httpclient'
 
@@ -14,9 +17,8 @@ function Replyer:new(username, password)
 		password = password,
 		action =  'chk'
 	}
-	code, response, body, sock = client.request_raw(self.loginUrl, {body = postData})
+	code, response, body = client.request_raw(self.loginUrl, {body = postData})
 
-	body = body..sock:readall()
 	if not body:find('登录成功') then
 		return nil
 	end
@@ -26,11 +28,10 @@ end
 
 function Replyer:post(boardID, subject, content)
 	token = {}
-	encodedCookie = ''
 	for _, c in pairs(self.cookies) do
-		encodedCookie = encodedCookie .. c.key .. "=" .. c.value .. "; "
 		if c.key == 'aspsky' then
 			base = c.value
+			c.flags.path = '/'
 		end
 	end
 	for k, v in string.gmatch(base, '(%w+)=(%w+)') do
@@ -40,9 +41,12 @@ function Replyer:post(boardID, subject, content)
 	-- add necessary referer header, parse and add query params
 	-- cookies must add manually, built-in implementation add cookie one by one
 	options = {
+		cookies = self.cookies,
+		params = {
+			boardID = boardID
+		},
 		headers = {
-			Referer = 'http://www.cc98.org',
-			Cookie = encodedCookie
+			Referer = 'http://www.cc98.org'
 		},
 		body = {
 			upfilerename = '',
@@ -55,9 +59,7 @@ function Replyer:post(boardID, subject, content)
 		}
 	}
 
-	url = self.postUrl .. '?' .. http.urlencode_params({boardID = boardID})
-	code, response, body, sock = client.request_raw(url, options)
-	body = body..sock:readall()
+	code, response, body = client.request_raw(self.postUrl, options)
 
 	if not body:find('发表帖子成功') then
 		return nil
