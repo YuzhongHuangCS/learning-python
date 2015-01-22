@@ -21,9 +21,12 @@ function Replyer:new(username, password)
 
 	if not body:find('登录成功') then
 		return nil
+	else
+		for _, c in ipairs(response.cookies) do
+			c.flags.path = '/'
+		end
+		return setmetatable({cookies = response.cookies}, Replyer)
 	end
-
-	return setmetatable({cookies = response.cookies}, Replyer)
 end
 
 function Replyer:post(boardID, subject, content)
@@ -31,15 +34,13 @@ function Replyer:post(boardID, subject, content)
 	for _, c in ipairs(self.cookies) do
 		if c.key == 'aspsky' then
 			base = c.value
-			c.flags.path = '/'
+			break
 		end
 	end
 	for k, v in string.gmatch(base, '(%w+)=(%w+)') do
 		token[k] = v
 	end
 
-	-- add necessary referer header, parse and add query params
-	-- cookies must add manually, built-in implementation add cookie one by one
 	options = {
 		cookies = self.cookies,
 		params = {
@@ -64,15 +65,11 @@ function Replyer:post(boardID, subject, content)
 	if not body:find('发表帖子成功') then
 		return nil
 	else
-		return boardID
+		return boardID, subject
 	end
 end
 
 function Replyer:reply(boardID, rootID, content)
-	for _, c in ipairs(self.cookies) do
-		c.flags.path = '/'
-	end
-
 	options = {
 		cookies = self.cookies,
 		params = {

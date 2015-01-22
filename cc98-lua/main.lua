@@ -30,12 +30,12 @@ else
 	print(string.format("Successfully login as %s", k))
 end
 
-result = robot:post(509, 'title', 'body')
-if not result then
+boardID, subject = robot:post(499, 'title', 'body')
+if not boardID then
 	print('Post Thread Failed')
 	return -1
 else
-	print(string.format("Successfully post a thread on board %s", result))
+	print(string.format("Successfully post a thread on board %s, subject %s", boardID, subject))
 end
 
 boardID, rootID, content = robot:reply(509, 4223610, 'LuCI httpclient 0.1')
